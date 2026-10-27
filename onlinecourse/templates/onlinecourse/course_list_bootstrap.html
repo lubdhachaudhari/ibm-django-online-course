@@ -1,0 +1,68 @@
+{% extends "onlinecourse/base.html" %}
+
+{% block title %}All Courses - Online Learning Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Hero Banner -->
+    <div class="col-12 mb-4">
+        <div class="p-5 bg-white rounded-3 shadow-sm border">
+            <h1 class="display-5 fw-bold text-dark">Welcome to the Online Course Platform</h1>
+            <p class="lead text-muted">Expand your horizons, test your skills, and earn course credentials through interactive lessons and automated mock examinations.</p>
+            {% if not user.is_authenticated %}
+                <a href="{% url 'onlinecourse:registration' %}" class="btn btn-primary btn-lg mt-2 me-2">Get Started</a>
+                <a href="{% url 'onlinecourse:login' %}" class="btn btn-outline-secondary btn-lg mt-2">Log In</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Course Catalog Header -->
+    <div class="col-12 mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h3 text-dark mb-0"><i class="bi bi-grid-fill me-2 text-primary"></i>Available Courses</h2>
+            <span class="badge bg-secondary fs-6">{{ course_list|length }} Course{{ course_list|length|pluralize }} Available</span>
+        </div>
+    </div>
+
+    <!-- Course Cards Grid -->
+    {% if course_list %}
+        {% for course in course_list %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm border-0 transition-hover">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                <i class="bi bi-book me-1"></i>Course
+                            </span>
+                            <span class="badge bg-light text-muted small">
+                                <i class="bi bi-people me-1"></i>{{ course.total_enrollment }} Enrolled
+                            </span>
+                        </div>
+                        <h5 class="card-title fw-bold text-dark mb-2">{{ course.name }}</h5>
+                        <p class="card-text text-muted flex-grow-1">
+                            {{ course.description|truncatewords:25|default:"Explore course contents, lessons, and exam assessments." }}
+                        </p>
+                        <hr class="my-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">
+                                <i class="bi bi-journals me-1"></i>{{ course.lessons.count }} Lessons
+                            </span>
+                            <a href="{% url 'onlinecourse:course_details' course.id %}" class="btn btn-outline-primary btn-sm px-3">
+                                View Course <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info p-4 text-center">
+                <i class="bi bi-info-circle-fill fs-3 d-block mb-2"></i>
+                <h4 class="alert-heading">No Courses Available</h4>
+                <p class="mb-0">Please visit the Django Administration portal or run the sample data setup command to populate courses.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

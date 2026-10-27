@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django database
+*.sqlite3
+*.sqlite3-journal
+
+# Static and media directories
+staticfiles/
+media/course_images/*
+!media/course_images/.gitkeep
+
+# Environment and Secrets
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Temporary and IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+scratch_chrome_profile/
+scripts/capture_real_screenshots.py
+
+# Preserved project screenshots (Do NOT ignore)
+!03-admin-site.jpeg
+!07-final.jpeg

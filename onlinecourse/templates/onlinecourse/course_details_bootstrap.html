@@ -1,0 +1,202 @@
+{% extends "onlinecourse/base.html" %}
+
+{% block title %}{{ course.name }} - Course Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Course Information Header -->
+    <div class="col-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'onlinecourse:index' %}">Courses</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ course.name }}</li>
+            </ol>
+        </nav>
+
+        <div class="card shadow-sm border-0 bg-white p-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <h1 class="display-6 fw-bold text-primary mb-2">{{ course.name }}</h1>
+                    {% if course.description %}
+                        <p class="lead text-muted">{{ course.description }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if user.is_authenticated %}
+                        {% if is_enrolled %}
+                            <span class="badge bg-success fs-6 p-2">
+                                <i class="bi bi-check-circle-fill me-1"></i>Enrolled
+                            </span>
+                        {% else %}
+                            <a href="{% url 'onlinecourse:enroll' course.id %}" class="btn btn-success btn-lg">
+                                <i class="bi bi-person-plus-fill me-1"></i>Enroll in Course
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'onlinecourse:login' %}?next={{ request.path }}" class="btn btn-outline-primary">
+                            Log in to Enroll
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="d-flex flex-wrap gap-4 text-muted small">
+                <div><i class="bi bi-people-fill me-1"></i><strong>Total Learners:</strong> {{ course.total_enrollment }}</div>
+                {% if course.pub_date %}
+                    <div><i class="bi bi-calendar-event me-1"></i><strong>Published:</strong> {{ course.pub_date }}</div>
+                {% endif %}
+                {% if course.instructors.all %}
+                    <div>
+                        <i class="bi bi-person-badge me-1"></i><strong>Instructors:</strong>
+                        {% for instructor in course.instructors.all %}
+                            {{ instructor.user.get_full_name|default:instructor.user.username }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Lessons Section -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                <h4 class="mb-0"><i class="bi bi-book-half me-2"></i>Course Lessons</h4>
+                <span class="badge bg-light text-primary fs-6">{{ lessons|length }} Lesson{{ lessons|length|pluralize }}</span>
+            </div>
+            <div class="card-body">
+                {% if lessons %}
+                    <div class="accordion" id="lessonsAccordion">
+                        {% for lesson in lessons %}
+                            <div class="accordion-item mb-2 border rounded">
+                                <h2 class="accordion-header" id="heading{{ lesson.id }}">
+                                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ lesson.id }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ lesson.id }}">
+                                        <span class="badge bg-secondary me-2">Lesson {{ forloop.counter }}</span>
+                                        <strong>{{ lesson.title }}</strong>
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ lesson.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ lesson.id }}" data-bs-parent="#lessonsAccordion">
+                                    <div class="accordion-body">
+                                        <p class="mb-0" style="white-space: pre-line;">{{ lesson.content|default:"No lesson content provided yet." }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>No lessons have been added to this course yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Mock Examination System Section -->
+        <div class="card shadow-sm border-0" id="exam-section">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Course Examination</h4>
+                <span class="badge bg-warning text-dark">Mock Exam</span>
+            </div>
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                    <p class="text-muted">Answer all questions below and click <strong>Submit Exam</strong> to calculate your final score.</p>
+                    
+                    <form method="post" action="{% url 'onlinecourse:submit' course.id %}">
+                        {% csrf_token %}
+                        
+                        {% for lesson in lessons %}
+                            {% if lesson.questions.all %}
+                                <div class="mb-4">
+                                    <h5 class="text-secondary border-bottom pb-2 mb-3">
+                                        <i class="bi bi-bookmark-check me-1"></i>Exam Questions for: {{ lesson.title }}
+                                    </h5>
+                                    
+                                    {% for question in lesson.questions.all %}
+                                        <div class="card mb-3 border">
+                                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                                <strong>Question {{ forloop.counter }}: {{ question.question_text }}</strong>
+                                                <span class="badge bg-info text-dark">{{ question.grade }} pt{{ question.grade|pluralize }}</span>
+                                            </div>
+                                            <div class="card-body">
+                                                {% if question.choices.all %}
+                                                    {% for choice in question.choices.all %}
+                                                        <div class="form-check mb-2">
+                                                            <input class="form-check-input" type="radio" name="choice_{{ question.id }}" id="choice_{{ choice.id }}" value="{{ choice.id }}" required>
+                                                            <label class="form-check-label" for="choice_{{ choice.id }}">
+                                                                {{ choice.choice_text }}
+                                                            </label>
+                                                        </div>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <p class="text-muted fst-italic mb-0">No choices configured for this question.</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% empty %}
+                            <div class="alert alert-secondary mb-0">
+                                <i class="bi bi-exclamation-circle me-2"></i>No lessons found.
+                            </div>
+                        {% endfor %}
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="bi bi-send-check-fill me-2"></i>Submit Exam
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="bi bi-shield-lock-fill fs-3 me-3"></i>
+                        <div>
+                            <strong>Examination Locked:</strong>
+                            Please <a href="{% url 'onlinecourse:login' %}?next={{ request.path }}" class="alert-link">log in</a> to take this course's examination and view questions.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar / Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="bi bi-speedometer2 me-2"></i>Course Overview</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Total Lessons
+                        <span class="badge bg-primary rounded-pill">{{ lessons|length }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Passing Score
+                        <span class="badge bg-success rounded-pill">70%</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Enrollment Status
+                        {% if is_enrolled %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not Enrolled</span>
+                        {% endif %}
+                    </li>
+                </ul>
+
+                {% if is_enrolled %}
+                    <div class="d-grid mt-3">
+                        <a href="{% url 'onlinecourse:show_exam_result_course' course.id %}" class="btn btn-outline-info">
+                            <i class="bi bi-card-checklist me-1"></i>View Latest Result
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
